@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ÜRÜNLER</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <style>
+        .content {
+            padding: 0 18px;
+            display: none;
+            overflow: hidden;
+            background-color: #f1f1f1;
+        }
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto;
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 600px; 
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .product-card {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .button-container {
+            display: none;
+            margin-top: 5px;
+        }
+        .product-card:hover .button-container {
+            display: block;
+        }
+        @media (min-width: 768px) {
+            .button-container {
+                display: none !important;
+            }
+            .product-card:hover .button-container {
+                display: flex !important;
+                justify-content: center;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h2 class="text-center my-4">Ürünler</h2>
+
+<div class="container mb-3">
+    <input type="text" id="searchInput" class="form-control" placeholder="Ürün ismine göre ara...">
+</div>
+
+<div id="product-list" class="container">
+    <div id="buttons" class="d-flex justify-content-center"></div>    
+</div>
+
+<div id="myModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <p id="pname">Popup İçerik Alanı</p>
+      <p id="point"></p>
+      <div id="img">
+        <img id="ranking" src="" alt="">
+      </div>
+    </div>
+</div>
+
+<script>
+    var modal = document.getElementById('myModal');
+    var point = document.getElementById('point');
+    var pname = document.getElementById('pname');
+    var span = document.getElementsByClassName("close")[0];
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    var temp = [];
+    fetch('/viewHepsi')
+        .then(response => response.json())
+        .then(data => {
+            temp = data;
+        })
+        .catch(error => console.error('Error fetching HepsiBurada data:', error));
+
+    var products = [];
+    fetch('/viewAmazon')
+        .then(response => response.json())
+        .then(data => {
+            products = data;
+            displayProducts(products);
+        })
+        .catch(error => console.error('Error fetching Amazon data:', error));
+
+    function displayProducts(products) {
+        const productList = document.getElementById('product-list');
+        productList.innerHTML = ''; 
+        products.forEach(item => {
+            const productCard = document.createElement('div');
+            productCard.classList.add('product-card');
+
+            const productName = document.createElement('p');
+            productName.textContent = item.name;
+            productCard.appendChild(productName);
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.classList.add('button-container');
+
+            const button1 = document.createElement('button');
+            button1.textContent = 'Amazon';
+            button1.className = "btn btn-dark mr-2 mb-2 mb-md-0";
+            button1.addEventListener('click', () => {
+                pname.innerHTML = item.name + " ürününün amazon.com'daki ortalama değerlendirmesi: ";
+                if (item.point == "idare eder") {
+                        point.innerHTML = "Ortalama";
+                } else if (item.point == "iyi") {
+                    point.innerHTML = "İyi";
+                } else if (item.point == "çok iyi") {
+                    point.innerHTML = "Çok İyi";
+                } else if (item.point == "kötü") {
+                    point.innerHTML = "Kötü";
+                } else if (item.point == "çok kötü") {
+                    point.innerHTML = "Çok Kötü";
+                }
+                updateRankImage(item.point);
+                modal.style.display = "block";
+            });
+
+            const button2 = document.createElement('button');
+            button2.textContent = 'HepsiBurada';
+            button2.className = "btn btn-dark";
+            button2.addEventListener('click', () => {
+                let deneme = temp.find(product => item.product_id === product.product_id);
+                if (deneme) {
+                    pname.innerHTML = deneme.name + " ürününün hepsiburada.com'daki ortalama değerlendirmesi: ";
+                    if (deneme.point == "idare eder") {
+                        point.innerHTML = "Ortalama";
+                    } else if (deneme.point == "iyi") {
+                        point.innerHTML = "İyi";
+                    } else if (deneme.point == "çok iyi") {
+                        point.innerHTML = "Çok İyi";
+                    } else if (deneme.point == "kötü") {
+                        point.innerHTML = "Kötü";
+                    } else if (deneme.point == "çok kötü") {
+                        point.innerHTML = "Çok Kötü";
+                    }
+                    updateRankImage(deneme.point);
+                    modal.style.display = "block";
+                }
+            });
+
+            buttonContainer.appendChild(button1);
+            buttonContainer.appendChild(button2);
+
+            productCard.appendChild(buttonContainer);
+            productList.appendChild(productCard);
+        });
+    }
+
+    function updateRankImage(point) {
+        const rank = document.getElementById('ranking');
+        switch (point) {
+            case "çok kötü":
+                rank.setAttribute("src", "../public/img/ranking_verybad.png");
+                break;
+            case "kötü":
+                rank.setAttribute("src", "../public/img/ranking_bad.png");
+                break;
+            case "idare eder":
+                rank.setAttribute("src", "../public/img/ranking_medium.png");
+                break;
+            case "iyi":
+                rank.setAttribute("src", "../public/img/ranking_good.png");
+                break;
+            case "çok iyi":
+                rank.setAttribute("src", "../public/img/ranking_verygood.png");
+                break;
+        }
+        rank.setAttribute("width", "100%");
+        rank.setAttribute("height", "auto");
+    }
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', () => {
+        const searchTerm = searchInput.value.toLowerCase();
+        const filteredProducts = products.filter(product => 
+            product.name.toLowerCase().includes(searchTerm)
+        );
+        displayProducts(filteredProducts);
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+
+</body>
+</html>
